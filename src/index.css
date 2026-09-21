@@ -1,0 +1,194 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --shadow-soft: 0 1px 2px 0 oklch(0.2 0.02 260 / 0.04), 0 8px 24px -12px oklch(0.2 0.02 260 / 0.14);
+  --shadow-card: 0 1px 0 0 oklch(0.2 0.02 260 / 0.04), 0 14px 40px -22px oklch(0.2 0.02 260 / 0.28);
+  --shadow-lift: 0 24px 60px -28px oklch(0.2 0.02 260 / 0.35);
+  --shadow-accent: 0 14px 34px -14px oklch(0.577 0.235 27.6 / 0.45);
+}
+
+:root {
+  --radius: 0.875rem;
+  --background: oklch(0.983 0.003 258);
+  --foreground: oklch(0.185 0.008 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.185 0.008 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.185 0.008 260);
+  --gradient-accent: linear-gradient(135deg, oklch(0.617 0.222 27.4) 0%, oklch(0.52 0.2 22) 100%);
+  --login-wash-strong: oklch(0.99 0.004 250 / 0.76);
+  --login-wash-soft: oklch(0.99 0.004 250 / 0.28);
+
+  --primary: oklch(0.183 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.972 0.002 264);
+  --secondary-foreground: oklch(0.269 0 0);
+  --muted: oklch(0.968 0.002 264);
+  --muted-foreground: oklch(0.554 0.017 264);
+  --accent: oklch(0.577 0.235 27.6);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.917 0.004 264);
+  --input: oklch(0.898 0.004 264);
+  --ring: oklch(0.577 0.235 27.6);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  /* Chromium stretches the date text to fill the whole input, pinning the
+     calendar icon far to the right with a big empty gap in between — keep
+     the value and icon hugging each other instead. */
+  input[type='date']::-webkit-datetime-edit {
+    flex: none;
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator {
+    margin-inline-start: 0.375rem;
+    padding: 0;
+  }
+}
+
+@utility eyebrow {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+@utility accent-fill {
+  background-image: var(--gradient-accent);
+  color: var(--accent-foreground);
+}
+
+@keyframes roadlynk-drive {
+  0% {
+    transform: translateX(-24px) translateY(1px) scale(0.78);
+    opacity: 0.72;
+  }
+  48% {
+    transform: translateX(8px) translateY(0) scale(0.92);
+    opacity: 0.9;
+  }
+  72%,
+  100% {
+    transform: translateX(0) translateY(-1px) scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes roadlynk-road {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.roadlynk-loader {
+  width: 10rem;
+}
+
+.roadlynk-loader--compact {
+  width: 4rem;
+}
+
+.roadlynk-loader__vehicle {
+  display: flex;
+  justify-content: center;
+  transform-origin: center bottom;
+  animation: roadlynk-drive 1.35s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+
+.roadlynk-loader__logo-crop {
+  width: 7rem;
+  height: 4.35rem;
+  overflow: hidden;
+}
+
+.roadlynk-loader__logo-crop img {
+  display: block;
+  width: 7rem;
+  max-width: none;
+}
+
+.roadlynk-loader__logo-crop--compact {
+  width: 4rem;
+  height: 2.5rem;
+}
+
+.roadlynk-loader__logo-crop--compact img {
+  width: 4rem;
+}
+
+.roadlynk-loader__road {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--foreground) 14%, transparent);
+}
+
+.roadlynk-loader__road span {
+  display: block;
+  width: 200%;
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 20px, transparent 20px 34px);
+  animation: roadlynk-road 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roadlynk-loader__vehicle,
+  .roadlynk-loader__road span {
+    animation: none;
+  }
+}
