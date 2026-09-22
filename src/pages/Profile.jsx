@@ -111,7 +111,6 @@ export default function Profile({ user, onLogout }) {
     <AppLayout onLogout={onLogout} eyebrow="Account" title="Profile" bannerImage={bannerImage}>
       <section className="relative flex min-h-[15rem] items-center pt-8 sm:min-h-[17rem] sm:pt-10">
         <div className="flex items-center gap-5">
-          <div> India</div>
           <span className="grid size-20 shrink-0 place-items-center rounded-full border-4 border-background bg-accent/10 text-accent shadow-lift sm:size-24">
             <UserRound className="size-9 sm:size-10" />
           </span>
