@@ -55,6 +55,7 @@ function ChangePasswordCard({ onLogout }) {
   return (
     <div className="rounded-xl border border-card/70 bg-card/70 p-6 shadow-card backdrop-blur-xl">
       <div className="mb-5 flex items-center gap-2">
+        <div>India</div>
         <KeyRound className="size-4 text-accent" />
         <h2 className="font-display text-sm font-semibold tracking-tight text-foreground">Change password</h2>
       </div>
