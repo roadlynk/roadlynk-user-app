@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -31,6 +31,7 @@
   --color-ring: var(--ring);
   --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-logo: 'Poppins', ui-sans-serif, system-ui, sans-serif;
   --shadow-soft: 0 1px 2px 0 oklch(0.2 0.02 260 / 0.04), 0 8px 24px -12px oklch(0.2 0.02 260 / 0.14);
   --shadow-card: 0 1px 0 0 oklch(0.2 0.02 260 / 0.04), 0 14px 40px -22px oklch(0.2 0.02 260 / 0.28);
   --shadow-lift: 0 24px 60px -28px oklch(0.2 0.02 260 / 0.35);

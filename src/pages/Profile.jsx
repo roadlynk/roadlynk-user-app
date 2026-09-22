@@ -123,7 +123,7 @@ export default function Profile({ user, onLogout }) {
               {greeting},
               <GreetingIcon className="size-4 text-amber-500 drop-shadow-[0_0_6px_var(--background)] sm:size-5" strokeWidth={1.7} />
             </h1>
-            <p className="break-words font-display text-3xl font-medium text-foreground/90 [text-shadow:0_0_2px_var(--background),0_1px_10px_color-mix(in_oklab,var(--background)_90%,transparent),0_0_28px_color-mix(in_oklab,var(--background)_75%,transparent)] sm:text-5xl">{user?.username}</p>
+            <p className="break-words font-[family-name:var(--font-logo)] text-3xl font-bold tracking-tight text-foreground/90 [text-shadow:0_0_2px_var(--background),0_1px_10px_color-mix(in_oklab,var(--background)_90%,transparent),0_0_28px_color-mix(in_oklab,var(--background)_75%,transparent)] sm:text-5xl">{user?.username}</p>
           </div>
         </div>
       </section>
