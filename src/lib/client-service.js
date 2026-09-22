@@ -6,6 +6,12 @@ export async function listClientsApi({ companyId, active } = {}) {
   return data
 }
 
+// GET {{apiBaseUrl}}/clients/:clientId -> Client (includes branches[])
+export async function getClientApi(clientId) {
+  const { data } = await api.get(`/clients/${clientId}`)
+  return data
+}
+
 // POST {{apiBaseUrl}}/clients
 // { name, clientCode, companyId }
 export async function createClientApi(payload) {

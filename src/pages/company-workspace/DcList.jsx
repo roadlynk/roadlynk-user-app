@@ -446,7 +446,10 @@ export default function DcList() {
   const consignorBranches = (consignor?.branches ?? []).filter((branch) => branch.isActive)
   const consigneeBranches = (consignee?.branches ?? []).filter((branch) => branch.isActive)
   const clientOptions = clients.map((client) => ({ value: client._id, label: `${client.name} (${client.clientCode})` }))
-  const dealerOptions = dealers.map((dealer) => ({ value: dealer._id, label: `${dealer.dealerName}-${dealer.code}` }))
+  const dealerOptions = dealers.map((dealer) => ({
+    value: dealer._id,
+    label: dealer.dealerType === 'COMPANY' ? dealer.dealerName : `${dealer.dealerName}-${dealer.code}`,
+  }))
   const filterMaterial = materials.find((item) => item._id === filters.materialId) ?? null
 
   const activeFilterCount = countActiveFilters(filters)

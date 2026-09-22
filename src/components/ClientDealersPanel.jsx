@@ -9,7 +9,10 @@ import { cn } from '@/lib/utils'
 
 const EMPTY_DRAFT = { dealerName: '', dealerCode: '', address: EMPTY_DC_ADDRESS }
 
-export function ClientDealersPanel({ client }) {
+// `branchesVersion` bumps whenever a branch is added/edited on the same
+// client (branches feed the dealer-matching code on the DC page) — bumping
+// it re-runs the fetch below.
+export function ClientDealersPanel({ client, branchesVersion }) {
   const [expanded, setExpanded] = useState(true)
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
@@ -44,7 +47,8 @@ export function ClientDealersPanel({ client }) {
     return () => {
       cancelled = true
     }
-  }, [refreshDealers])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshDealers, branchesVersion])
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -222,7 +226,7 @@ export function ClientDealersPanel({ client }) {
                 <li key={dealer._id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-foreground">
-                      {dealer.dealerName} · {dealer.code}
+                      {dealer.dealerType === 'COMPANY' ? dealer.dealerName : `${dealer.dealerName} · ${dealer.code}`}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">{addressSummary(dealer.address)}</p>
                   </div>

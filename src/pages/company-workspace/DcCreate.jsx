@@ -115,7 +115,7 @@ export default function DcCreate() {
     cashAdvance: existingDc?.advance?.cashAdvance ?? '',
     dieselAdvance: existingDc?.advance?.dieselAdvance ?? '',
     bankAdvance: existingDc?.advance?.bankAdvance ?? '',
-    isPaymentDone: existingDc?.advance?.isPaymentDone ?? true,
+    isPaymentDone: existingDc?.advance?.isPaymentDone ?? false,
 
     notes: existingDc?.additionalInformation?.notes ?? '',
   }))
@@ -166,9 +166,10 @@ export default function DcCreate() {
 
   // Non-cement dealers are auto-matched (not user-picked), so only the name
   // is shown — the code is only meaningful for the cement dealer dropdown.
+  // A company-type dealer's code is never shown, cement or not.
   const dealerOptions = dealers.map((dealer) => ({
     value: dealer._id,
-    label: isCement ? `${dealer.dealerName}-${dealer.code}` : dealer.dealerName,
+    label: isCement && dealer.dealerType !== 'COMPANY' ? `${dealer.dealerName}-${dealer.code}` : dealer.dealerName,
   }))
   const deliveryDealer = dealers.find((dealer) => dealer._id === form.deliveryDealerId) ?? null
   const invoiceDealer = dealers.find((dealer) => dealer._id === form.invoiceDealerId) ?? null

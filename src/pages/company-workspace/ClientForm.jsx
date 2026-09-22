@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { FormSection, PageForm } from '@/components/ui/form-kit'
 import { TextField } from '@/components/ui/text-field'
-import { createClientApi } from '@/lib/client-service'
+import { createClientApi, getClientApi } from '@/lib/client-service'
 
 export default function ClientForm() {
   const { company } = useOutletContext()
@@ -29,8 +29,16 @@ export default function ClientForm() {
 
     setPending(true)
     try {
-      await createClientApi(payload)
-      navigate('..', { relative: 'path' })
+      const created = await createClientApi(payload)
+      // Re-fetch by id so the detail page opens with the client's full,
+      // server-confirmed record (including its branches[]).
+      const client = await getClientApi(created._id).catch(() => created ?? null)
+
+      if (client) {
+        navigate(client._id, { state: { client }, relative: 'path' })
+      } else {
+        navigate('..', { relative: 'path' })
+      }
     } catch (submitError) {
       setPending(false)
       setError(submitError.response?.data?.message ?? 'Unable to create this client.')

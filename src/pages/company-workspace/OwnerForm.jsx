@@ -18,14 +18,13 @@ const BALANCE_TYPE_OPTIONS = [
 
 /**
  * A TDS certificate on file exempts the owner entirely (0%). Otherwise the
- * rate is set by the PAN's 4th character: P = Individual (1%), C = Company (2%).
+ * rate is set by the PAN's 4th character: P = Individual (1%), anything else
+ * (Company, Firm, HUF, ...) = 2%.
  */
 function computeTdsPercentage({ pan, hasCertificate }) {
   if (hasCertificate) return 0
   const fourthChar = (pan ?? '').trim().toUpperCase()[3]
-  if (fourthChar === 'C') return 2
-  if (fourthChar === 'P') return 1
-  return null
+  return fourthChar === 'P' ? 1 : 2
 }
 
 function parseTruckNumbers(raw) {
@@ -102,7 +101,7 @@ export default function OwnerForm() {
 
   const hasCertificate = Boolean(certificateFileName)
   const tdsPercentage = form.isRental ? computeTdsPercentage({ pan: form.panNumber, hasCertificate }) : null
-  const showTruckNumberField = form.isRental && (isEditing || hasCertificate)
+  const showTruckNumberField = form.isRental
 
   function handleTruckNumbersChange(raw) {
     setForm({ ...form, tdsTruckNumberInput: raw })
@@ -167,10 +166,6 @@ export default function OwnerForm() {
 
     let tdsTruckNumber = []
     if (form.isRental) {
-      if (!isEditing && !hasCertificate) {
-        setError('Upload the TDS certificate before saving.')
-        return
-      }
       tdsTruckNumber = parseTruckNumbers(form.tdsTruckNumberInput)
       if (tdsTruckNumber.length === 0) {
         setTruckNumberError('Enter at least one truck number — required once the TDS certificate is uploaded.')
@@ -393,12 +388,11 @@ export default function OwnerForm() {
               hint={hasCertificate ? 'A TDS certificate is on file, so this owner is exempt (0%).' : undefined}
             />
             <div className="flex w-full flex-col gap-1.5 sm:col-span-2">
-              <Label>TDS certificate {!isEditing ? <span className="text-destructive">*</span> : null}</Label>
+              <Label>TDS certificate</Label>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="application/pdf,image/*"
-                required={!isEditing && !certificateFileName}
                 onChange={handleCertificateChange}
                 className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground"
               />
@@ -418,7 +412,7 @@ export default function OwnerForm() {
                   </button>
                 </p>
               ) : (
-                <p className="text-xs text-muted-foreground">Upload the certificate to enter this owner&rsquo;s TDS truck numbers.</p>
+                <p className="text-xs text-muted-foreground">Optional — upload it to exempt this owner from TDS.</p>
               )}
             </div>
             {showTruckNumberField ? (

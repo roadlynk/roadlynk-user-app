@@ -6,12 +6,12 @@ import { AddressFields } from '@/components/dc/AddressFields'
 import { EMPTY_DC_ADDRESS, addressSummary, fromAddressPayload, toAddressPayload, validateAddressValue } from '@/lib/address-format'
 import { cn } from '@/lib/utils'
 import { createClientBranchApi, updateClientBranchActiveStatusApi, updateClientBranchApi } from '@/lib/client-branch-service'
-import { listClientsApi } from '@/lib/client-service'
+import { getClientApi } from '@/lib/client-service'
 
 const EMPTY_DRAFT = { branchName: '', address: EMPTY_DC_ADDRESS }
 
 /** Lists and manages the branches of a single client. */
-export function ClientBranchesPanel({ client }) {
+export function ClientBranchesPanel({ client, onBranchSaved }) {
   const [expanded, setExpanded] = useState(true)
   const [search, setSearch] = useState('')
   const [branches, setBranches] = useState(client.branches ?? [])
@@ -33,8 +33,7 @@ export function ClientBranchesPanel({ client }) {
   async function refreshBranches() {
     setListError(null)
     try {
-      const response = await listClientsApi({ companyId: client.companyId })
-      const updated = response?.find((item) => item._id === client._id)
+      const updated = await getClientApi(client._id)
       setBranches(updated?.branches ?? [])
     } catch (fetchError) {
       setListError(fetchError.response?.data?.message ?? 'Unable to refresh branches.')
@@ -84,6 +83,9 @@ export function ClientBranchesPanel({ client }) {
       }
       await refreshBranches()
       cancelForm()
+      // Dealer-branch matching on the DC page keys off the branch id, so a
+      // saved branch means the dealers for this client need refetching too.
+      onBranchSaved?.()
     } catch (submitError) {
       setFormError(submitError.response?.data?.message ?? 'Unable to save this branch.')
     } finally {

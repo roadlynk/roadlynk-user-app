@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
 import { ClientBranchesPanel } from '@/components/ClientBranchesPanel'
 import { ClientDealersPanel } from '@/components/ClientDealersPanel'
-import { updateClientApi } from '@/lib/client-service'
+import { getClientApi, updateClientApi } from '@/lib/client-service'
 
 export default function ClientDetail() {
   const { company } = useOutletContext()
   const location = useLocation()
-  const client = location.state?.client ?? null
+  const [client, setClient] = useState(location.state?.client ?? null)
 
   const [form, setForm] = useState(() => ({
     name: client?.name ?? '',
@@ -19,6 +19,7 @@ export default function ClientDetail() {
   const [error, setError] = useState(null)
   const [pending, setPending] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [branchesVersion, setBranchesVersion] = useState(0)
 
   if (!client) {
     return (
@@ -54,6 +55,8 @@ export default function ClientDetail() {
     setPending(true)
     try {
       await updateClientApi(client._id, payload)
+      const updated = await getClientApi(client._id)
+      setClient(updated)
       setSaved(true)
     } catch (submitError) {
       setError(submitError.response?.data?.message ?? 'Unable to update this client.')
@@ -110,11 +113,14 @@ export default function ClientDetail() {
       </form>
 
       <div className="rounded-xl border border-border/70 bg-card/92 px-6 py-6 shadow-card backdrop-blur-xl">
-        <ClientBranchesPanel client={{ ...client, companyId: client.companyId ?? company._id }} />
+        <ClientBranchesPanel
+          client={{ ...client, companyId: client.companyId ?? company._id }}
+          onBranchSaved={() => setBranchesVersion((value) => value + 1)}
+        />
       </div>
 
       <div className="rounded-xl border border-border/70 bg-card/92 px-6 py-6 shadow-card backdrop-blur-xl">
-        <ClientDealersPanel client={client} />
+        <ClientDealersPanel client={client} branchesVersion={branchesVersion} />
       </div>
     </div>
   )
