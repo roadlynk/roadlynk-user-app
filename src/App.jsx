@@ -12,6 +12,7 @@ import OwnerList from './pages/company-workspace/OwnerList.jsx'
 import OwnerForm from './pages/company-workspace/OwnerForm.jsx'
 import TransportRate from './pages/company-workspace/TransportRate.jsx'
 import BunkData from './pages/company-workspace/BunkData.jsx'
+import CashAccounts from './pages/company-workspace/CashAccounts.jsx'
 import DriverList from './pages/company-workspace/DriverList.jsx'
 import DriverForm from './pages/company-workspace/DriverForm.jsx'
 import ClientList from './pages/company-workspace/ClientList.jsx'
@@ -171,6 +172,7 @@ function App() {
         <Route path="owner/:ownerId" element={<OwnerForm />} />
         <Route path="transport-rate" element={<TransportRate />} />
         <Route path="bunk-data" element={<BunkData />} />
+        <Route path="account" element={<CashAccounts />} />
         <Route path="driver" element={<DriverList />} />
         <Route path="driver/new" element={<DriverForm />} />
         <Route path="driver/:driverId" element={<DriverForm />} />

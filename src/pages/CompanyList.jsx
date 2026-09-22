@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { Building2, ChevronLeft, ChevronRight, Loader2, Search, Sparkles } from 'lucide-react'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { listCompanies } from '@/lib/company-service'
 import { getCurrentUser } from '@/lib/auth-service'
 import { ACCESS_ROLE, getAccessRole } from '@/lib/access-control'
-import { setSelectedCompany } from '@/store/slices/companySlice'
+import { setIsOnlyCompany, setSelectedCompany } from '@/store/slices/companySlice'
 
 const CLIENT_TYPE_FILTERS = [
   { value: 'STANDARD', label: 'Standard' },
@@ -18,6 +18,7 @@ const LIMIT = 20
 
 export default function CompanyList({ onLogout }) {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [clientType, setClientType] = useState('STANDARD')
   const [page, setPage] = useState(1)
@@ -40,6 +41,7 @@ export default function CompanyList({ onLogout }) {
         setCompanies(response.data)
         setTotal(response.total)
         setTotalPages(response.totalPages)
+        dispatch(setIsOnlyCompany(response.total === 1))
       } catch (fetchError) {
         if (cancelled) return
         setError(fetchError.response?.data?.message ?? 'Unable to load companies.')
@@ -55,7 +57,16 @@ export default function CompanyList({ onLogout }) {
     return () => {
       cancelled = true
     }
-  }, [page])
+  }, [page, dispatch])
+
+  // Nothing to choose between when there's only one company — skip the list
+  // and go straight into its workspace.
+  useEffect(() => {
+    if (loading || error || total !== 1 || companies.length !== 1) return
+    const [onlyCompany] = companies
+    dispatch(setSelectedCompany(onlyCompany))
+    navigate(`/company-list/${onlyCompany._id}`, { replace: true })
+  }, [loading, error, total, companies, dispatch, navigate])
 
   const byType = useMemo(
     () => companies.filter((company) => (clientType === 'SAAS' ? company.isSaasClient : !company.isSaasClient)),

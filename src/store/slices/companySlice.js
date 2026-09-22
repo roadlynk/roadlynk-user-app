@@ -5,6 +5,10 @@ import { createSlice } from '@reduxjs/toolkit'
 // and survives a page refresh inside the company workspace.
 const initialState = {
   selectedCompany: null,
+  // Whether the logged-in user has exactly one company overall — set from
+  // the company list's last load, so the workspace's "back" button can skip
+  // returning to a list that would just auto-redirect right back here.
+  isOnlyCompany: false,
 }
 
 const companySlice = createSlice({
@@ -17,8 +21,11 @@ const companySlice = createSlice({
     clearSelectedCompany(state) {
       state.selectedCompany = null
     },
+    setIsOnlyCompany(state, action) {
+      state.isOnlyCompany = Boolean(action.payload)
+    },
   },
 })
 
-export const { setSelectedCompany, clearSelectedCompany } = companySlice.actions
+export const { setSelectedCompany, clearSelectedCompany, setIsOnlyCompany } = companySlice.actions
 export default companySlice.reducer

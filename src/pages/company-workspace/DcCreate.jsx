@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
-import { ArrowLeft, FileText, Loader2, Upload } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, FileText, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { TextField } from '@/components/ui/text-field'
+import { NumberField, TextField } from '@/components/ui/text-field'
 import { CheckboxField, FormSection, ReadOnlyField, SelectField, TextAreaField } from '@/components/ui/form-kit'
 import { cn } from '@/lib/utils'
 import { addressSummary } from '@/lib/address-format'
@@ -11,7 +11,10 @@ import { listTrucksApi } from '@/lib/truck-service'
 import { listDriversApi } from '@/lib/driver-service'
 import { listMaterialsApi } from '@/lib/material-service'
 import { listDealersApi } from '@/lib/dealer-service'
-import { filterBunksApi } from '@/lib/bunk-service'
+import { listBunksApi } from '@/lib/bunk-service'
+import { filterBunkAssignmentsApi } from '@/lib/bunk-assign-service'
+import { CASH_ACCOUNT_TYPE, listCashAccountsApi } from '@/lib/cash-account-service'
+import { filterAccountAssignmentsApi } from '@/lib/account-assign-service'
 import { getTransportRateAndLocationApi } from '@/lib/transport-rate-service'
 import { createDeliveryChallanApi, updateDeliveryChallanApi, uploadOdometerImageApi } from '@/lib/delivery-challan-service'
 
@@ -65,8 +68,9 @@ export default function DcCreate() {
   const [materials, setMaterials] = useState([])
   const [optionsLoading, setOptionsLoading] = useState(true)
 
-  const [bunkOptions, setBunkOptions] = useState([])
-  const [bunkChecking, setBunkChecking] = useState(false)
+  const [bunks, setBunks] = useState([])
+  const [cashAccounts, setCashAccounts] = useState([])
+  const [assignmentLoading, setAssignmentLoading] = useState(false)
 
   const [dealers, setDealers] = useState([])
   const [dealersLoading, setDealersLoading] = useState(false)
@@ -75,8 +79,7 @@ export default function DcCreate() {
   const [rateLookupLoading, setRateLookupLoading] = useState(false)
   const [rateLookupError, setRateLookupError] = useState(null)
 
-  const [odometerFile, setOdometerFile] = useState(null)
-  const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   const todayDate = useMemo(() => new Date().toISOString().slice(0, 10), [])
 
@@ -89,8 +92,8 @@ export default function DcCreate() {
     consignorBranchId: existingDc?.consignment?.consignorBranchId ?? '',
     consigneeId: existingDc?.consignment?.consigneeId ?? '',
     consigneeBranchId: existingDc?.consignment?.consigneeBranchId ?? '',
-    account: existingDc?.consignment?.account ?? '',
-    bunkName: existingDc?.consignment?.bunkName ?? '',
+    bunkId: existingDc?.consignment?.bunkId ?? '',
+    cashAccountId: existingDc?.consignment?.account ?? '',
 
     deliveryDealerId: existingDc?.dealerDetails?.shipToDealerId ?? '',
     invoiceDealerId: existingDc?.dealerDetails?.invoiceDealerId ?? '',
@@ -114,8 +117,11 @@ export default function DcCreate() {
 
     cashAdvance: existingDc?.advance?.cashAdvance ?? '',
     dieselAdvance: existingDc?.advance?.dieselAdvance ?? '',
+    bunkCreditUsed: existingDc?.advance?.bunkCreditUsed ?? true,
     bankAdvance: existingDc?.advance?.bankAdvance ?? '',
-    isPaymentDone: existingDc?.advance?.isPaymentDone ?? false,
+    // Set by the backend once the bank transfer clears — never edited here,
+    // only displayed and echoed back on update.
+    bankPaymentDone: existingDc?.advance?.bankPaymentDone ?? false,
 
     notes: existingDc?.additionalInformation?.notes ?? '',
   }))
@@ -129,13 +135,17 @@ export default function DcCreate() {
       listTrucksApi({ companyId: company._id, active: true }),
       listDriversApi({ companyId: company._id, active: true }),
       listMaterialsApi({ companyId: company._id, active: true }),
+      listBunksApi({ companyId: company._id }),
+      listCashAccountsApi({ companyId: company._id, active: true }),
     ])
-      .then(([clientsResponse, trucksResponse, driversResponse, materialsResponse]) => {
+      .then(([clientsResponse, trucksResponse, driversResponse, materialsResponse, bunksResponse, cashAccountsResponse]) => {
         if (cancelled) return
         setClients(clientsResponse ?? [])
         setTrucks(trucksResponse ?? [])
         setDrivers(driversResponse ?? [])
         setMaterials(materialsResponse ?? [])
+        setBunks(bunksResponse ?? [])
+        setCashAccounts(cashAccountsResponse ?? [])
       })
       .catch((fetchError) => {
         if (cancelled) return
@@ -158,7 +168,6 @@ export default function DcCreate() {
   const consignee = clients.find((client) => client._id === form.consigneeId) ?? null
   const consignorBranches = (consignor?.branches ?? []).filter((branch) => branch.isActive)
   const consigneeBranches = (consignee?.branches ?? []).filter((branch) => branch.isActive)
-  const consignorBranch = consignorBranches.find((branch) => branch._id === form.consignorBranchId) ?? null
   const clientOptions = clients.map((client) => ({ value: client._id, label: `${client.name} (${client.clientCode})` }))
 
   const material = materials.find((item) => item._id === form.materialId) ?? null
@@ -182,17 +191,10 @@ export default function DcCreate() {
   const biddingAmount = Number(form.biddingAmount) || 0
   const totalTransportRate = transportRate + transportIncentive - biddingAmount
 
-  const totalAdvance = form.isPaymentDone
-    ? (Number(form.cashAdvance) || 0) + (Number(form.dieselAdvance) || 0) + (Number(form.bankAdvance) || 0)
-    : (Number(form.cashAdvance) || 0) + (Number(form.dieselAdvance) || 0)
-
-  // Account auto-fills as "<consignor code>-<consignor branch name>" whenever
-  // either changes, but stays a plain editable text field afterward.
-  useEffect(() => {
-    if (!consignor || !consignorBranch) return
-    update({ account: `${consignor.clientCode}-${consignorBranch.branchName}` })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [consignor?._id, consignorBranch?._id])
+  const totalAdvance =
+    (Number(form.cashAdvance) || 0) +
+    (form.bunkCreditUsed ? Number(form.dieselAdvance) || 0 : 0) +
+    (form.bankPaymentDone ? Number(form.bankAdvance) || 0 : 0)
 
   // Non-cement materials use a single dealer address for both invoice and
   // ship-to — the "Same as delivery address" toggle (and its section) is
@@ -203,39 +205,45 @@ export default function DcCreate() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCement])
 
-  const bunkSelectionComplete = Boolean(form.consignorId && form.consignorBranchId)
+  const bunkOptions = bunks.map((bunk) => ({ value: bunk._id, label: bunk.name }))
+  const cashAccountOptions = cashAccounts
+    .filter((account) => account.type === CASH_ACCOUNT_TYPE.PETTY_CASH)
+    .map((account) => ({ value: account._id, label: account.name }))
+  const assignmentSelectionComplete = Boolean(form.consignorId && form.consignorBranchId)
 
+  // Once a consignor + branch are both picked, look up whatever bunk/account
+  // is already assigned to that combination and pre-fill the two fields with
+  // it — the user can still change either before saving.
   useEffect(() => {
-    setBunkOptions([])
-    if (!bunkSelectionComplete) return
+    update({ bunkId: '', cashAccountId: '' })
+    if (!assignmentSelectionComplete) return
 
     let cancelled = false
-    setBunkChecking(true)
+    setAssignmentLoading(true)
 
-    filterBunksApi({
-      companyId: company._id,
-      consignorId: form.consignorId,
-      consignorBranchId: form.consignorBranchId,
-    })
-      .then((response) => {
+    Promise.all([
+      filterBunkAssignmentsApi({ companyId: company._id, consignorId: form.consignorId, consignorBranchId: form.consignorBranchId }),
+      filterAccountAssignmentsApi({ companyId: company._id, consignorId: form.consignorId, consignorBranchId: form.consignorBranchId }),
+    ])
+      .then(([bunkAssignments, accountAssignments]) => {
         if (cancelled) return
-        const names = response?.[0]?.bunkName ?? []
-        setBunkOptions(names.map((name) => ({ value: name, label: name })))
-        if (names.length === 1) update({ bunkName: names[0] })
+        const assignedBunkId = bunkAssignments?.[0]?.bunkId ?? ''
+        const assignedAccountId = accountAssignments?.[0]?.accountId?._id ?? ''
+        update({ bunkId: assignedBunkId, cashAccountId: assignedAccountId })
       })
       .catch(() => {
-        // No bunk configured for this consignor/branch combination — leave
-        // the field optional rather than blocking the form.
+        // No assignment configured for this consignor/branch — leave both
+        // fields optional rather than blocking the form.
       })
       .finally(() => {
-        if (!cancelled) setBunkChecking(false)
+        if (!cancelled) setAssignmentLoading(false)
       })
 
     return () => {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bunkSelectionComplete, company._id, form.consignorId, form.consignorBranchId])
+  }, [assignmentSelectionComplete, company._id, form.consignorId, form.consignorBranchId])
 
   // Delivery/invoice addresses are picked from the consignee's dealers.
   useEffect(() => {
@@ -275,10 +283,17 @@ export default function DcCreate() {
   }, [isCement, form.consigneeBranchId, dealers])
 
   // Transport rate + lane distance are looked up once the consignor branch,
-  // consignee, delivery dealer, material, truck capacity and load capacity
-  // are all known — cleared back to empty the moment any of them isn't.
+  // consignee, delivery dealer, material, company date, truck capacity and
+  // load capacity are all known — cleared back to empty the moment any of
+  // them isn't.
   const rateLookupReady = Boolean(
-    form.consignorBranchId && form.consigneeId && form.deliveryDealerId && form.materialId && truck?.capacity && form.loadingQuantity,
+    form.consignorBranchId &&
+      form.consigneeId &&
+      form.deliveryDealerId &&
+      form.materialId &&
+      form.companyDate &&
+      truck?.capacity &&
+      form.loadingQuantity,
   )
 
   useEffect(() => {
@@ -296,6 +311,7 @@ export default function DcCreate() {
       consigneeId: form.consigneeId,
       dealerId: form.deliveryDealerId,
       materialId: form.materialId,
+      companyDate: form.companyDate,
       truckCapacity: truck.capacity,
       loadCapacity: Number(form.loadingQuantity),
     })
@@ -323,6 +339,7 @@ export default function DcCreate() {
     form.consigneeId,
     form.deliveryDealerId,
     form.materialId,
+    form.companyDate,
     truck?.capacity,
     form.loadingQuantity,
   ])
@@ -344,21 +361,20 @@ export default function DcCreate() {
     update({ materialFieldValues: { ...form.materialFieldValues, [fieldName]: value } })
   }
 
-  function handleImageChange(event) {
-    const file = event.target.files?.[0]
-    setOdometerFile(file ?? null)
-  }
-
-  async function handleImageUpload() {
-    if (!odometerFile) return
-    setUploadingImage(true)
+  async function handlePhotoChange(event) {
+    const input = event.target
+    const file = input.files?.[0]
+    if (!file) return
+    setError(null)
+    setUploadingPhoto(true)
     try {
-      const { url } = await uploadOdometerImageApi(odometerFile)
+      const { url } = await uploadOdometerImageApi(file)
       update({ odometerImageUrl: url })
     } catch (uploadError) {
       setError(uploadError.response?.data?.message ?? 'Unable to upload the odometer photo.')
+      input.value = ''
     } finally {
-      setUploadingImage(false)
+      setUploadingPhoto(false)
     }
   }
 
@@ -401,12 +417,17 @@ export default function DcCreate() {
     if (!form.truckId) return 'Select a truck.'
     if (!form.driverId) return 'Select a driver.'
     if (!rateLookup?.finalTransportRate) return 'A transport rate could not be found for this combination.'
+    const transportValue = transportRate * (Number(form.loadingQuantity) || 0)
+    if (totalAdvance > transportValue) {
+      return `Total advance (₹${totalAdvance}) cannot exceed the transport rate × loading quantity (₹${transportValue}).`
+    }
     return null
   }
 
   function buildPayload() {
     return {
-      companyId: company._id,
+      // The company can't change on edit, so companyId is only sent on create.
+      ...(isEditing ? {} : { companyId: company._id }),
       companyDetails: {
         invoice: form.invoice.trim(),
         shipmentNumber: form.shipmentNumber.trim(),
@@ -417,8 +438,8 @@ export default function DcCreate() {
         consignorBranchId: form.consignorBranchId,
         consigneeId: form.consigneeId,
         consigneeBranchId: form.consigneeBranchId,
-        bunkName: form.bunkName,
-        account: form.account.trim(),
+        bunkId: form.bunkId || undefined,
+        account: form.cashAccountId || undefined,
       },
       dealerDetails: {
         invoiceDealerId: form.invoiceDealerId,
@@ -455,8 +476,9 @@ export default function DcCreate() {
       advance: {
         cashAdvance: Number(form.cashAdvance) || 0,
         dieselAdvance: Number(form.dieselAdvance) || 0,
+        bunkCreditUsed: form.bunkCreditUsed,
         bankAdvance: Number(form.bankAdvance) || 0,
-        isPaymentDone: form.isPaymentDone,
+        bankPaymentDone: form.bankPaymentDone,
         totalAdvance,
       },
       additionalInformation: {
@@ -467,6 +489,12 @@ export default function DcCreate() {
 
   async function handleSave(event) {
     event.preventDefault()
+
+    if (uploadingPhoto) {
+      setError('Wait for the odometer photo to finish uploading.')
+      return
+    }
+
     const validationError = validateBeforeSave()
     if (validationError) {
       setError(validationError)
@@ -578,9 +606,8 @@ export default function DcCreate() {
                 placeholder={material ? 'Select category' : 'Select a material first'}
                 disabled={!material}
               />
-              <TextField
+              <NumberField
                 label={`Loading quantity${material ? ` (${material.quantityType})` : ''}`}
-                type="number"
                 required
                 value={form.loadingQuantity}
                 onChange={(event) => update({ loadingQuantity: event.target.value })}
@@ -646,20 +673,37 @@ export default function DcCreate() {
                 placeholder={form.consigneeId ? 'Select branch' : 'Select a consignee first'}
                 disabled={!form.consigneeId}
               />
-              <TextField
+              <SelectField
                 label="Account"
-                required
-                value={form.account}
-                onChange={(event) => update({ account: event.target.value })}
-                helperText="Pre-filled from the consignor code and branch — edit if needed."
+                value={form.cashAccountId}
+                onChange={(event) => update({ cashAccountId: event.target.value })}
+                options={cashAccountOptions}
+                placeholder={
+                  !assignmentSelectionComplete
+                    ? 'Select consignor and branch first'
+                    : assignmentLoading
+                      ? 'Loading accounts…'
+                      : cashAccountOptions.length === 0
+                        ? 'No accounts configured'
+                        : 'Select account'
+                }
+                disabled={!assignmentSelectionComplete || assignmentLoading || cashAccountOptions.length === 0}
               />
               <SelectField
                 label="Bunk"
-                value={form.bunkName}
-                onChange={(event) => update({ bunkName: event.target.value })}
+                value={form.bunkId}
+                onChange={(event) => update({ bunkId: event.target.value })}
                 options={bunkOptions}
-                placeholder={!bunkSelectionComplete ? 'Select consignor and branch first' : bunkChecking ? 'Checking bunks…' : 'Select bunk'}
-                disabled={!bunkSelectionComplete || bunkChecking || bunkOptions.length === 0}
+                placeholder={
+                  !assignmentSelectionComplete
+                    ? 'Select consignor and branch first'
+                    : assignmentLoading
+                      ? 'Loading bunks…'
+                      : bunkOptions.length === 0
+                        ? 'No bunks configured'
+                        : 'Select bunk'
+                }
+                disabled={!assignmentSelectionComplete || assignmentLoading || bunkOptions.length === 0}
               />
             </FormSection>
 
@@ -730,21 +774,21 @@ export default function DcCreate() {
 
             <FormSection
               title="Rate"
-              description={!rateLookupReady ? 'Select the consignor branch, consignee, delivery dealer, material and truck first.' : undefined}
+              description={
+                !rateLookupReady ? 'Select the consignor branch, consignee, delivery dealer, material, company date and truck first.' : undefined
+              }
             >
               <ReadOnlyField
                 label="Transport rate"
                 value={rateLookupLoading ? 'Looking up…' : rateLookup ? `₹${rateLookup.finalTransportRate}` : ''}
               />
-              <TextField
+              <NumberField
                 label="Transport incentive"
-                type="number"
                 value={form.transportIncentive}
                 onChange={(event) => update({ transportIncentive: event.target.value })}
               />
-              <TextField
+              <NumberField
                 label="Bidding amount"
-                type="number"
                 value={form.biddingAmount}
                 onChange={(event) => update({ biddingAmount: event.target.value })}
               />
@@ -755,33 +799,27 @@ export default function DcCreate() {
             <FormSection title="Distance">
               <div className="flex w-full flex-col gap-1.5 sm:col-span-2">
                 <label className="text-sm font-medium text-foreground">Odometer photo</label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground"
-                  />
-                  <Button type="button" variant="outline" size="sm" onClick={handleImageUpload} disabled={!odometerFile || uploadingImage}>
-                    {uploadingImage ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-                    Upload
-                  </Button>
-                  {form.odometerImageUrl ? (
-                    <a
-                      href={form.odometerImageUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
-                    >
-                      <FileText className="size-3" />
-                      View photo
-                    </a>
-                  ) : null}
-                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground"
+                />
+                {uploadingPhoto ? <p className="text-xs text-muted-foreground">Uploading photo…</p> : null}
+                {form.odometerImageUrl ? (
+                  <a
+                    href={form.odometerImageUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex w-fit items-center gap-1 text-xs font-medium text-accent hover:underline"
+                  >
+                    <FileText className="size-3" />
+                    View photo
+                  </a>
+                ) : null}
               </div>
-              <TextField
+              <NumberField
                 label="Odometer distance"
-                type="number"
                 value={form.odometerDistance}
                 onChange={(event) => update({ odometerDistance: event.target.value })}
               />
@@ -800,31 +838,39 @@ export default function DcCreate() {
         {step === 2 ? (
           <div className="space-y-8">
             <FormSection title="Advance">
-              <TextField
+              <NumberField
                 label="Cash advance"
-                type="number"
                 value={form.cashAdvance}
                 onChange={(event) => update({ cashAdvance: event.target.value })}
               />
-              <TextField
+              <NumberField
                 label="Diesel advance"
-                type="number"
                 value={form.dieselAdvance}
                 onChange={(event) => update({ dieselAdvance: event.target.value })}
               />
-              <TextField
+              <CheckboxField
+                label="Is Bunk Credit Used"
+                hint="When checked, the total advance includes the diesel advance too."
+                checked={form.bunkCreditUsed}
+                onChange={(checked) => update({ bunkCreditUsed: checked })}
+                className="sm:col-span-2"
+              />
+              <NumberField
                 label="Bank advance"
-                type="number"
                 value={form.bankAdvance}
                 onChange={(event) => update({ bankAdvance: event.target.value })}
               />
-              <CheckboxField
-                label="Payment done"
-                hint="When checked, the total advance includes the bank advance too."
-                checked={form.isPaymentDone}
-                onChange={(checked) => update({ isPaymentDone: checked })}
-                className="sm:col-span-2"
-              />
+              <div className="flex items-center gap-2 sm:col-span-2">
+                <span className="text-sm font-medium text-foreground">Bank payment status</span>
+                {form.bankPaymentDone ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-accent">
+                    <CheckCircle2 className="size-4" />
+                    Bank Advanced Completed
+                  </span>
+                ) : (
+                  <X className="size-4 text-destructive" />
+                )}
+              </div>
               <ReadOnlyField label="Total advance" value={`₹${totalAdvance}`} className="sm:col-span-2" />
             </FormSection>
             <FormSection title="Additional information">
@@ -858,7 +904,7 @@ export default function DcCreate() {
               Next
             </Button>
           ) : (
-            <Button type="button" className="accent-fill" disabled={pending} onClick={handleSave}>
+            <Button type="button" className="accent-fill" disabled={pending || uploadingPhoto} onClick={handleSave}>
               {pending ? <Loader2 className="size-4 animate-spin" /> : null}
               Save DC
             </Button>

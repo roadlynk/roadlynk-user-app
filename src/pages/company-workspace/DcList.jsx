@@ -389,8 +389,11 @@ export default function DcList() {
     try {
       const blob = await downloadDeliveryChallanPdfApi(record._id)
       const url = URL.createObjectURL(blob)
-      window.open(url, '_blank', 'noopener,noreferrer')
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${record.dcNumber}.pdf`
+      link.click()
+      URL.revokeObjectURL(url)
     } catch (downloadError) {
       setError(downloadError.response?.data?.message ?? 'Unable to generate the PDF for this challan.')
     } finally {
@@ -734,27 +737,18 @@ export default function DcList() {
 
         {showFilters ? (
           <div className="w-full shrink-0 lg:sticky lg:top-4 lg:w-[23rem] xl:w-96">
-            <div className="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/92 shadow-card backdrop-blur-xl lg:max-h-[calc(100vh-2rem)]">
-              <div className="flex w-full shrink-0 items-center justify-between gap-3 border-b border-border bg-card/95 px-5 py-4 backdrop-blur-xl">
-                <span className="flex items-center gap-2">
-                  <SlidersHorizontal className="size-4 text-muted-foreground" />
-                  <span className="font-display text-sm font-semibold uppercase tracking-[0.16em] text-foreground">Filters</span>
-                  {activeFilterCount > 0 ? (
-                    <span className="inline-flex items-center rounded-full bg-accent/15 px-2 py-0.5 text-[0.68rem] font-semibold text-accent">
-                      {activeFilterCount} active
-                    </span>
-                  ) : null}
-                </span>
-                <span className="flex shrink-0 items-center gap-3">
-                  {activeFilterCount > 0 ? (
-                    <button
-                      type="button"
-                      onClick={handleResetFilters}
-                      className="text-xs font-medium text-accent transition-colors hover:text-accent/80"
-                    >
-                      Clear all
-                    </button>
-                  ) : null}
+            <div className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-xl border border-border/70 bg-card/92 shadow-card backdrop-blur-xl">
+              <div className="flex w-full shrink-0 flex-col gap-3.5 border-b border-border bg-card/95 px-5 py-4 backdrop-blur-xl">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2">
+                    <SlidersHorizontal className="size-4 text-muted-foreground" />
+                    <span className="font-display text-sm font-semibold uppercase tracking-[0.16em] text-foreground">Filters</span>
+                    {activeFilterCount > 0 ? (
+                      <span className="inline-flex items-center rounded-full bg-accent/15 px-2 py-0.5 text-[0.68rem] font-semibold text-accent">
+                        {activeFilterCount} active
+                      </span>
+                    ) : null}
+                  </span>
                   <button
                     type="button"
                     onClick={() => setShowFilters(false)}
@@ -764,10 +758,19 @@ export default function DcList() {
                   >
                     <X className="size-4" />
                   </button>
-                </span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Button type="button" variant="outline" className="flex-1" onClick={handleResetFilters} disabled={activeFilterCount === 0}>
+                    <RotateCcw className="size-4" />
+                    Reset all
+                  </Button>
+                  <Button type="button" className="accent-fill flex-1" onClick={handleApplyFilters}>
+                    Apply filters
+                  </Button>
+                </div>
               </div>
 
-              <div className="space-y-5 px-5 py-5 lg:flex-1 lg:overflow-y-auto">
+              <div className="scroll-panel min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pt-5 pb-[20px]">
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <input
@@ -999,16 +1002,6 @@ export default function DcList() {
                 <div className="border-t border-border pt-5">
                   <CheckboxField label="Active only" checked={filters.activeOnly} onChange={(checked) => updateFilter({ activeOnly: checked })} />
                 </div>
-              </div>
-
-              <div className="flex shrink-0 gap-3 border-t border-border bg-card/95 px-5 py-4 backdrop-blur-xl">
-                <Button type="button" variant="outline" className="flex-1" onClick={handleResetFilters}>
-                  <RotateCcw className="size-4" />
-                  Reset all
-                </Button>
-                <Button type="button" className="accent-fill flex-1" onClick={handleApplyFilters}>
-                  Apply filters
-                </Button>
               </div>
             </div>
           </div>

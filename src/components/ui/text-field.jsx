@@ -60,4 +60,35 @@ const PasswordField = forwardRef(function PasswordField({ label = 'Password', ..
   )
 })
 
-export { TextField, PasswordField }
+// A number input that never accepts a negative value (blocked on keypress
+// and stripped on paste/typed input, not just on blur like the native `min`
+// attribute would do).
+const NumberField = forwardRef(function NumberField({ min = 0, max, step = 1, value, onChange, inputClassName, ...props }, ref) {
+  function handleChange(event) {
+    const raw = event.target.value
+    onChange?.({ target: { value: raw.startsWith('-') ? raw.slice(1) : raw } })
+  }
+
+  function handleKeyDown(event) {
+    if (event.key === '-' || event.key === '+' || event.key === 'e' || event.key === 'E') {
+      event.preventDefault()
+    }
+  }
+
+  return (
+    <TextField
+      ref={ref}
+      type="number"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      inputClassName={cn('[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none', inputClassName)}
+      {...props}
+    />
+  )
+})
+
+export { TextField, PasswordField, NumberField }

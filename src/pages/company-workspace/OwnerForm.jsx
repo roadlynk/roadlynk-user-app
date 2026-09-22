@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { ArrowLeft, Building2, FileText, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { TextField } from '@/components/ui/text-field'
+import { NumberField, TextField } from '@/components/ui/text-field'
 import { CheckboxField, FormSection, PageForm, ReadOnlyField, SelectField, TextAreaField } from '@/components/ui/form-kit'
 import { Label } from '@/components/ui/label'
 import { PincodeFields } from '@/components/PincodeFields'
@@ -167,7 +167,7 @@ export default function OwnerForm() {
     let tdsTruckNumber = []
     if (form.isRental) {
       tdsTruckNumber = parseTruckNumbers(form.tdsTruckNumberInput)
-      if (tdsTruckNumber.length === 0) {
+      if (hasCertificate && tdsTruckNumber.length === 0) {
         setTruckNumberError('Enter at least one truck number — required once the TDS certificate is uploaded.')
         return
       }
@@ -366,9 +366,8 @@ export default function OwnerForm() {
             className="sm:col-span-2"
           />
           <ReadOnlyField label="Account group" value={form.isRental ? 'CREDIT' : 'ASSET'} className="sm:col-span-2" />
-          <TextField
+          <NumberField
             label="Opening balance"
-            type="number"
             value={form.openingBalance}
             onChange={(event) => setForm({ ...form, openingBalance: event.target.value })}
           />
@@ -418,9 +417,13 @@ export default function OwnerForm() {
             {showTruckNumberField ? (
               <TextAreaField
                 label={
-                  <>
-                    TDS truck numbers <span className="text-destructive">*</span>
-                  </>
+                  hasCertificate ? (
+                    <>
+                      TDS truck numbers <span className="text-destructive">*</span>
+                    </>
+                  ) : (
+                    'TDS truck numbers'
+                  )
                 }
                 value={form.tdsTruckNumberInput}
                 onChange={(event) => handleTruckNumbersChange(event.target.value)}
@@ -428,7 +431,9 @@ export default function OwnerForm() {
                 helperText={
                   truckNumberError
                     ? undefined
-                    : `${parseTruckNumbers(form.tdsTruckNumberInput).length} of ${MAX_TDS_TRUCK_NUMBERS} truck(s) listed. One per line, or comma separated.`
+                    : hasCertificate
+                      ? `${parseTruckNumbers(form.tdsTruckNumberInput).length} of ${MAX_TDS_TRUCK_NUMBERS} truck(s) listed. One per line, or comma separated.`
+                      : `Optional unless a TDS certificate is uploaded. ${parseTruckNumbers(form.tdsTruckNumberInput).length} of ${MAX_TDS_TRUCK_NUMBERS} truck(s) listed.`
                 }
                 className="sm:col-span-2"
               />

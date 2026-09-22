@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
 import { ClientBranchesPanel } from '@/components/ClientBranchesPanel'
 import { ClientDealersPanel } from '@/components/ClientDealersPanel'
-import { getClientApi, updateClientApi } from '@/lib/client-service'
+import { updateClientApi } from '@/lib/client-service'
 
 export default function ClientDetail() {
   const { company } = useOutletContext()
   const location = useLocation()
-  const [client, setClient] = useState(location.state?.client ?? null)
+  const client = location.state?.client ?? null
 
   const [form, setForm] = useState(() => ({
     name: client?.name ?? '',
@@ -55,8 +55,6 @@ export default function ClientDetail() {
     setPending(true)
     try {
       await updateClientApi(client._id, payload)
-      const updated = await getClientApi(client._id)
-      setClient(updated)
       setSaved(true)
     } catch (submitError) {
       setError(submitError.response?.data?.message ?? 'Unable to update this client.')

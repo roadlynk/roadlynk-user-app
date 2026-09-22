@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { ArrowLeft, Truck as TruckIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { TextField } from '@/components/ui/text-field'
+import { NumberField, TextField } from '@/components/ui/text-field'
 import { FormSection, PageForm, SelectField } from '@/components/ui/form-kit'
 import { listOwnersApi } from '@/lib/owner-service'
 import { createTruckApi, updateTruckApi } from '@/lib/truck-service'
@@ -190,27 +190,23 @@ export default function TruckForm() {
           value={form.chasisNumber}
           onChange={(event) => setForm({ ...form, chasisNumber: event.target.value })}
         />
-        <TextField
+        <NumberField
           label="Capacity"
-          type="number"
           value={form.capacity}
           onChange={(event) => setForm({ ...form, capacity: event.target.value })}
         />
-        <TextField
+        <NumberField
           label="Wheel type"
-          type="number"
           value={form.wheelType}
           onChange={(event) => setForm({ ...form, wheelType: event.target.value })}
         />
-        <TextField
+        <NumberField
           label="Fuel tank capacity"
-          type="number"
           value={form.fuelTankCapacity}
           onChange={(event) => setForm({ ...form, fuelTankCapacity: event.target.value })}
         />
-        <TextField
+        <NumberField
           label="Horse power"
-          type="number"
           value={form.horsePower}
           onChange={(event) => setForm({ ...form, horsePower: event.target.value })}
         />

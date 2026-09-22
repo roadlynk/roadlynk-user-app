@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Loader2, Pencil, Percent, Plus, Search } from 'lucide-react'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Button } from '@/components/ui/button'
-import { TextField } from '@/components/ui/text-field'
+import { NumberField, TextField } from '@/components/ui/text-field'
 import { EmptyState, TableShell } from '@/components/ui/form-kit'
 import { StatusPill } from '@/components/shared/StatusPill'
 import { activateGstConfigApi, createGstConfigApi, listGstConfigsApi, updateGstConfigApi } from '@/lib/gst-configurer-service'
@@ -147,9 +147,9 @@ export default function GstConfigurer({ onLogout }) {
                 value={draft.code}
                 onChange={(event) => setDraft({ ...draft, code: event.target.value.toUpperCase() })}
               />
-              <TextField
+              <NumberField
                 label="Percentage"
-                type="number"
+                max={100}
                 required
                 value={draft.percentage}
                 onChange={(event) => setDraft({ ...draft, percentage: event.target.value })}

@@ -101,12 +101,13 @@ export function TableShell({ toolbar, children }) {
   )
 }
 
-export function EmptyState({ icon: Icon, title, description }) {
+export function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <div className="px-6 py-16 text-center">
       {Icon ? <Icon className="mx-auto size-8 text-muted-foreground/50" /> : null}
       <p className="mt-3 text-sm font-medium text-foreground">{title}</p>
       {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { ChevronDown, Loader2, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { TextField } from '@/components/ui/text-field'
+import { NumberField, TextField } from '@/components/ui/text-field'
 import { FormSection, SelectField } from '@/components/ui/form-kit'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -377,9 +377,8 @@ export default function TransportRate() {
       ) : rateChecked ? (
         <div className="space-y-5">
           <div className="grid gap-4 rounded-xl border border-border/70 bg-card/92 px-6 py-6 shadow-card backdrop-blur-xl sm:grid-cols-2">
-            <TextField
+            <NumberField
               label="Calculated distance (km)"
-              type="number"
               required
               value={calculatedDistance}
               onChange={(event) => {
@@ -387,9 +386,8 @@ export default function TransportRate() {
                 setDistancesSaved(false)
               }}
             />
-            <TextField
+            <NumberField
               label="Company distance (km)"
-              type="number"
               required
               value={companyDistance}
               onChange={(event) => {
@@ -444,16 +442,14 @@ export default function TransportRate() {
                 {tiers.map((tier) => (
                   <div key={tier.id} className="space-y-3 rounded-md border border-border bg-secondary/30 p-3">
                     <div className="flex flex-wrap items-end gap-3">
-                      <TextField
+                      <NumberField
                         label="From limit"
-                        type="number"
                         value={tier.fromLimit}
                         onChange={(event) => updateTier(tier.id, { fromLimit: event.target.value })}
                         className="w-32"
                       />
-                      <TextField
+                      <NumberField
                         label="To limit"
-                        type="number"
                         value={tier.toLimit}
                         onChange={(event) => updateTier(tier.id, { toLimit: event.target.value })}
                         className="w-32"
@@ -472,23 +468,20 @@ export default function TransportRate() {
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
-                      <TextField
+                      <NumberField
                         label="Rate 1"
-                        type="number"
                         required
                         value={tier.rate1}
                         onChange={(event) => updateTier(tier.id, { rate1: event.target.value })}
                       />
-                      <TextField
+                      <NumberField
                         label="Rate 2"
-                        type="number"
                         required
                         value={tier.rate2}
                         onChange={(event) => updateTier(tier.id, { rate2: event.target.value })}
                       />
-                      <TextField
+                      <NumberField
                         label="Rate 3"
-                        type="number"
                         required
                         value={tier.rate3}
                         onChange={(event) => updateTier(tier.id, { rate3: event.target.value })}

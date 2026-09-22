@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import {
   ArrowLeft,
   Boxes,
@@ -15,6 +16,7 @@ import {
   PanelLeftOpen,
   Truck,
   UserRound,
+  Wallet,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -34,6 +36,8 @@ const ONBOARDING_NAV = [
 
 const TRIP_NAV = [{ to: 'dc', label: 'Delivery challans', icon: FileText }]
 
+const PAYMENT_NAV = [{ to: 'account', label: 'Account', icon: Wallet }]
+
 const MASTERS_NAV = [
   { to: 'material', label: 'Materials', icon: Boxes },
   { to: 'bunk-data', label: 'Bunk Data', icon: Fuel },
@@ -44,6 +48,7 @@ const NAV_GROUPS = [
   { key: 'company', label: 'Company', items: COMPANY_NAV, requiresProfileAccess: true },
   { key: 'onboarding', label: 'Onboarding', items: ONBOARDING_NAV },
   { key: 'trip', label: 'Trip', items: TRIP_NAV },
+  { key: 'payment', label: 'Payment', items: PAYMENT_NAV },
   { key: 'masters', label: 'Masters', items: MASTERS_NAV },
 ]
 
@@ -157,6 +162,7 @@ export function CompanyWorkspaceLayout({ company, loading, onLogout, children })
   const expanded = pinned || hovered
   const navigate = useNavigate()
   const location = useLocation()
+  const isOnlyCompany = useSelector((state) => state.company.isOnlyCompany)
 
   // The DC listing pairs a wide filter sidebar with a data-heavy table —
   // give it more room than the standard form/list pages get.
@@ -195,8 +201,8 @@ export function CompanyWorkspaceLayout({ company, loading, onLogout, children })
             >
               <Menu className="size-5" />
             </button>
-            <Button asChild variant="outline" size="icon" aria-label="Back to company list" className="hidden sm:inline-flex">
-              <button type="button" onClick={() => navigate('/company-list')}>
+            <Button asChild variant="outline" size="icon" aria-label="Back" className="hidden sm:inline-flex">
+              <button type="button" onClick={() => navigate(isOnlyCompany ? '/profile' : '/company-list')}>
                 <ArrowLeft className="size-4" />
               </button>
             </Button>

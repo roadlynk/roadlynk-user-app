@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { FormSection, PageForm } from '@/components/ui/form-kit'
 import { TextField } from '@/components/ui/text-field'
-import { createClientApi, getClientApi } from '@/lib/client-service'
+import { createClientApi, listClientsApi } from '@/lib/client-service'
 
 export default function ClientForm() {
   const { company } = useOutletContext()
@@ -30,9 +30,10 @@ export default function ClientForm() {
     setPending(true)
     try {
       const created = await createClientApi(payload)
-      // Re-fetch by id so the detail page opens with the client's full,
-      // server-confirmed record (including its branches[]).
-      const client = await getClientApi(created._id).catch(() => created ?? null)
+      // There's no GET /clients/:id — re-fetch the list so the detail page
+      // opens with the client's full, server-confirmed record.
+      const clients = await listClientsApi({ companyId: company._id }).catch(() => [])
+      const client = clients.find((item) => item._id === created?._id) ?? created ?? null
 
       if (client) {
         navigate(client._id, { state: { client }, relative: 'path' })

@@ -6,7 +6,7 @@ import { AddressFields } from '@/components/dc/AddressFields'
 import { EMPTY_DC_ADDRESS, addressSummary, fromAddressPayload, toAddressPayload, validateAddressValue } from '@/lib/address-format'
 import { cn } from '@/lib/utils'
 import { createClientBranchApi, updateClientBranchActiveStatusApi, updateClientBranchApi } from '@/lib/client-branch-service'
-import { getClientApi } from '@/lib/client-service'
+import { listClientsApi } from '@/lib/client-service'
 
 const EMPTY_DRAFT = { branchName: '', address: EMPTY_DC_ADDRESS }
 
@@ -33,7 +33,8 @@ export function ClientBranchesPanel({ client, onBranchSaved }) {
   async function refreshBranches() {
     setListError(null)
     try {
-      const updated = await getClientApi(client._id)
+      const response = await listClientsApi({ companyId: client.companyId })
+      const updated = response?.find((item) => item._id === client._id)
       setBranches(updated?.branches ?? [])
     } catch (fetchError) {
       setListError(fetchError.response?.data?.message ?? 'Unable to refresh branches.')
